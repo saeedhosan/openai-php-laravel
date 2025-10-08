@@ -4,6 +4,7 @@ use Illuminate\Config\Repository;
 use OpenAI\Laravel\Facades\OpenAI;
 use OpenAI\Laravel\ServiceProvider;
 use OpenAI\Resources\Completions;
+use OpenAI\Resources\Responses;
 use OpenAI\Responses\Completions\CreateResponse;
 use PHPUnit\Framework\ExpectationFailedException;
 
@@ -214,3 +215,21 @@ test('fake throws an exception if any request was sent when non was expected', f
 
     OpenAI::assertNothingSent();
 })->expectException(ExpectationFailedException::class);
+
+test('fake can assert a Responses request was sent', function () {
+
+    OpenAI::fake([
+        \OpenAI\Responses\Responses\CreateResponse::fake(),
+    ]);
+
+    OpenAI::responses()->create([
+        'model' => 'gpt-5',
+        'prompt' => 'PHP is ',
+    ]);
+
+    OpenAI::assertSent(Responses::class, function (string $method, array $parameters): bool {
+        return $method === 'create' &&
+            $parameters['model'] === 'gpt-5' &&
+            $parameters['prompt'] === 'PHP is ';
+    });
+});
